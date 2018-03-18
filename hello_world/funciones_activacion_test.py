@@ -4,6 +4,12 @@ def relu(T):
 	S = torch.abs(T)
 	return torch.div(torch.add(T, 1, S), 2)
 
+def sig(T):
+  	return torch.reciprocal(1 + torch.exp(-1 * T))	
+
+def swish(T, beta):
+	return torch.mul(T, sig(torch.mul(T, beta)))
+
 def main1():
 
 	print(str(relu(10)))
@@ -35,4 +41,12 @@ def main2():
 	print("Relu'd tensor: \n")
 	print(relu(a))
 
-main2()
+def main3():
+	a = torch.randn(3,3,3)
+
+	print("Input tensor: \n")
+	print(a)
+	print("swish'd tensor: \n")
+	print(swish(a, 1.5))
+
+main3()
