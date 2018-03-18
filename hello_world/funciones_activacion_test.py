@@ -10,6 +10,13 @@ def sig(T):
 def swish(T, beta):
 	return torch.mul(T, sig(torch.mul(T, beta)))
 
+def celu(T, alfa):
+	positive = relu(T)
+	negative = torch.mul(relu(torch.mul(T, -1)), -1)
+	celu_T = torch.mul(torch.add(torch.exp(torch.div(negative, alfa)), -1), alfa)
+
+	return torch.add(positive, 1, celu_T)
+
 def main1():
 
 	print(str(relu(10)))
@@ -49,4 +56,12 @@ def main3():
 	print("swish'd tensor: \n")
 	print(swish(a, 1.5))
 
-main3()
+def main4():
+	a = torch.randn(3,3,3)
+
+	print("Input tensor: \n")
+	print(a)
+	print("celu'd tensor: \n")
+	print(celu(a, 1.5))
+
+main4()
