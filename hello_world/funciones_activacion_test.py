@@ -17,6 +17,9 @@ def celu(T, alfa):
 
 	return torch.add(positive, 1, celu_T)
 
+def softmax(T, dim=0, estable=True):
+	print(T[dim])
+
 def main1():
 
 	print(str(relu(10)))
@@ -64,4 +67,19 @@ def main4():
 	print("celu'd tensor: \n")
 	print(celu(a, 1.5))
 
-main4()
+def main5():
+	a = torch.randn(2,2,2)
+
+	print("Input tensor: \n")
+	print(a)
+
+	print("Input trans tensor: \n")
+	print(torch.transpose(a, 0, 1))
+
+	print("multiplying tensors")
+	print(torch.matmul(a,torch.transpose(a, 0, 1)))
+
+	# print("celu'd tensor: \n")
+	# print(softmax(a))
+
+main5()
