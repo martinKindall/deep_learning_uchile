@@ -17,8 +17,14 @@ def celu(T, alfa):
 
 	return torch.add(positive, 1, celu_T)
 
+# por ahora softmax estara implementada solo para tensores en 2-D
 def softmax(T, dim=0, estable=True):
-	print(T[dim])
+	denom_softmax = torch.div(T, 2)
+	denom_softmax = torch.exp(denom_softmax)
+	denom_softmax = torch.mm(denom_softmax, torch.transpose(denom_softmax, 0, 1))
+	denom_softmax = torch.reciprocal(torch.diag(denom_softmax))
+
+	return torch.mm(torch.diag(denom_softmax), T.exp())
 
 def main1():
 
@@ -61,18 +67,12 @@ def main4():
 	print(celu(a, 1.5))
 
 def main5():
-	a = torch.randn(2,2,2)
+	a = torch.randn(3,3)
 
 	print("Input tensor: \n")
 	print(a)
 
-	print("Input trans tensor: \n")
-	print(torch.transpose(a, 0, 1))
+	print("softed: \n")
+	print(softmax(a))
 
-	print("multiplying tensors")
-	print(torch.matmul(a,torch.transpose(a, 0, 1)))
-
-	# print("celu'd tensor: \n")
-	# print(softmax(a))
-
-main1()
+main5()
