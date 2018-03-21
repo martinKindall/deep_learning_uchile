@@ -1,8 +1,8 @@
 import torch
 
 def relu(T):
-	S = torch.abs(T)
-	return torch.div(torch.add(T, 1, S), 2)
+	T[T < 0] = 0
+	return T
 
 def sig(T):
   	return torch.reciprocal(1 + torch.exp(-1 * T))	
@@ -21,13 +21,6 @@ def softmax(T, dim=0, estable=True):
 	print(T[dim])
 
 def main1():
-
-	print(str(relu(10)))
-	print(str(relu(-10)))
-
-	# print(torch.exp(3))
-
-	# print(torch.is_tensor(3))
 
 	print("Input tensor: \n")
 	a = torch.randn(3,3,3)
@@ -82,4 +75,4 @@ def main5():
 	# print("celu'd tensor: \n")
 	# print(softmax(a))
 
-main5()
+main1()
