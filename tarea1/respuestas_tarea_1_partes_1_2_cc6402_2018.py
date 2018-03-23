@@ -13,20 +13,32 @@ Fecha sugerida para completar esta parte: 23 de marzo de 2018
 
 # instalacion de los paquetes necesarios
 
-is_colab = False
+from os import path
+from wheel.pep425tags import get_abbr_impl, get_impl_ver, get_abi_tag
+platform = '{}{}-{}'.format(get_abbr_impl(), get_impl_ver(), get_abi_tag())
 
-if (is_colab):
-    from os import path
-    from wheel.pep425tags import get_abbr_impl, get_impl_ver, get_abi_tag
-    platform = '{}{}-{}'.format(get_abbr_impl(), get_impl_ver(), get_abi_tag())
+accelerator = 'cu80'
 
-    accelerator = 'cu80'
-
-    #!pip install -q http://download.pytorch.org/whl/{accelerator}/torch-0.3.0.post4-{platform}-linux_x86_64.whl torchvision
-    #!pip install -q ipdb
+!pip install -q http://download.pytorch.org/whl/{accelerator}/torch-0.3.0.post4-{platform}-linux_x86_64.whl torchvision
+!pip install -q ipdb
 
 import torch
 import pdb
+
+# para manejar archivos de Drive
+
+!pip install -U -q PyDrive
+import os
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+from google.colab import auth
+from oauth2client.client import GoogleCredentials
+
+## Nos debemos autentificar como usuarios
+auth.authenticate_user()
+gauth = GoogleAuth()
+gauth.credentials = GoogleCredentials.get_application_default()
+drive = GoogleDrive(gauth)
 
 """# Parte 1: Funciones de activación, derivadas y función de salida
 
@@ -171,7 +183,53 @@ class FFNN():
 
 """## 2d) Probando tu red con un modelo pre-entrenado"""
 
-red_neuronal = FFNN(4096, [15,15], ['algo'], 10)
-red_neuronal.forward(torch.randn(3,4096))
+# cargar modelo desde Drive
+
+local_download_path = os.path.expanduser('~/data_drive')
+try:
+  os.makedirs(local_download_path)
+except: pass
+
+folder_id = "1kuqGFqjqfDXcppXrRmPHCVUJzE7LRS1a"
+
+# Descarga de archivos !
+file_list = drive.ListFile(
+    {'q': "'{}' in parents".format(folder_id)}).GetList()
+
+for f in file_list:
+  # Creamos los archivos y los descargamos
+  # pdb.set_trace()
+  mimetypes = {
+      # Drive Document files as PDF
+        'application/vnd.google-apps.document': 'application/pdf',
+
+      # Drive Sheets files as MS Excel files.
+        'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      
+      # Drive folders
+        'application/vnd.google-apps.folder': 'N/A'
+
+      # see https://developers.google.com/drive/v3/web/mime-types
+  }
+  download_mimetype = None
+  print('title: %s, id: %s' % (f['title'], f['id']))
+  fname = os.path.join(local_download_path, f['title'])
+  print('downloading to {}'.format(fname))
+  #f_ = drive.CreateFile({'id': f['id']})
+  #f_.GetContentFile(fname)
+  
+  # la carpeta tambien aparecen en la lista, pero no la queremos descargar
+  # por eso cuando encontramos el tipo vnd.google-apps.folder lo saltamos
+  if f['mimeType'] in mimetypes:
+    continue
+  else:
+    f.GetContentFile(fname)
+
+os.chdir("/content/data_drive")
+#!rm -R /content/Deep_learning/
+!ls
+
+#red_neuronal = FFNN(4096, [15,15], ['algo'], 10)
+#red_neuronal.forward(torch.randn(3,4096))
 
 # Tu código visualizando los ejemplos incorrectos acá
