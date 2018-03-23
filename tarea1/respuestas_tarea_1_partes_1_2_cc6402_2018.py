@@ -131,21 +131,29 @@ class FFNN():
         self.l_a = l_a
         self.C = C
 
-        self.W_1 = torch.randn(F, l_h)
-        self.b_1 = torch.zeros(1, l_h)
-        self.U = torch.randn(l_h, C)
+        self.W_1 = torch.randn(F, l_h[0])
+        self.b_1 = torch.zeros(1, l_h[0])
+
+        self.W_2 = torch.randn(l_h[0], l_h[1])
+        self.b_2 = torch.zeros(1, l_h[1])
+
+        self.U = torch.randn(l_h[1], C)
         self.c_init = torch.zeros(1, C)
   
     def gpu(self):
         if torch.cuda.is_available():
             self.W_1 = self.W_1.cuda()
             self.b_1 = self.b_1.cuda()
+            self.W_2 = self.W_2.cuda()
+            self.b_2 = self.b_2.cuda()
             self.U = self.U.cuda()
             self.c_init = self.c_init.cuda()
   
     def cpu(self):
         self.W_1 = self.W_1.cpu()
         self.b_1 = self.b_1.cpu()
+        self.W_2 = self.W_2.cpu()
+        self.b_2 = self.b_2.cpu()
         self.U = self.U.cpu()
         self.c_init = self.c_init.cpu()
   
@@ -155,14 +163,15 @@ class FFNN():
           self.gpu()   # redundante, corregir
           
         h_1 = sig(torch.mm(x, self.W_1) + self.b_1)
-        y = softmax(torch.mm(h_1, self.U) + self.c_init)
+        h_2 = sig(torch.mm(h_1, self.W_2) + self.b_2)
+        y = softmax(torch.mm(h_2, self.U) + self.c_init)
         pdb.set_trace()
 
         return y
 
 """## 2d) Probando tu red con un modelo pre-entrenado"""
 
-red_neuronal = FFNN(4, 4, ['algo'], 2)
-red_neuronal.forward(torch.randn(3,4))
+red_neuronal = FFNN(4096, [15,15], ['algo'], 10)
+red_neuronal.forward(torch.randn(3,4096))
 
 # Tu código visualizando los ejemplos incorrectos acá
