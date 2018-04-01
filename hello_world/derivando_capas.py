@@ -27,11 +27,9 @@ uL = hL.mm(U).add(c)
 # de cross entropy 
 # el segundo termino de la derecha es la derivada de softmax
 
-dL_dypred = torch.mul(torch.mul(y, torch.reciprocal(y_pred)), -1/y_pred.size(0))
+#pdb.set_trace()
 
-pdb.set_trace()
-
-#dL_duL = 
+dL_duL = torch.mul(torch.mul(y, torch.add(y_pred, -1)), 1/y_pred.size(0))
 
 # El gradiente debe coincidir en dimensiones con la variable
 
