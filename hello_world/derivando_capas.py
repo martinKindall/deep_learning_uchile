@@ -66,16 +66,30 @@ dL_dhkm1 = torch.ones(B,dimkm1)
 # Ahora tu fórmula para el gradiente.
 # Esto debes repetirlo para relu, celu, y swish
 
-# para sigmoid sigmoid
+# para sigmoid
+dL_duk_sig = torch.mul(dL_dhkm1, torch.mul(hL, torch.mul(torch.add(hL, -1), -1)))
 
-dL_duk = torch.mul(dL_dhL, torch.mul(hL, torch.mul(torch.add(hL, -1), -1)))
-dL_dWk = None
-dL_dbk = None
-dL_dhk = None
+# para relu
+dL_duk_rel = None
+
+# para celu
+dL_duk_celu = None
+
+# para swish
+dL_duk_swish = None
+
+# se elige una funcion de activacion
+dL_duk = dL_duk_sig
+
+# estas derivadas se calculan de la misma forma para cualquier funcion de activacion
+
+dL_dWk = torch.mm(torch.transpose(hk, 0, 1), dL_duk)
+dL_dbk = torch.mm(torch.ones(1, dL_duk.size(0)), dL_duk)
+dL_dhk = torch.mm(dL_duk, torch.transpose(Wk, 0, 1))
 
 # El gradiente debe coincidir en dimensiones con las variables
 
 assert dL_duk.size() == uk.size()
-# assert dL_dhk.size() == hk.size()
-# assert dL_dbk.size() == bk.size()
-# assert dL_dWk.size() == Wk.size()
+assert dL_dWk.size() == Wk.size()
+assert dL_dbk.size(1) == bk.size(0)
+assert dL_dhk.size() == hk.size()
