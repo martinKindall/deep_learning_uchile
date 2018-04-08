@@ -13,7 +13,7 @@ y_pred = torch.ones(B,C)
 # Primero agregamos algunas variables dummy para chequear 
 # que al menos las dimensiones están correctas
 
-dimL = 40
+dimL = 15
 
 hL = torch.ones(B,dimL)
 U = torch.ones(dimL,C)
@@ -47,3 +47,35 @@ dL_dhL = torch.mm(dL_duL, torch.transpose(U, 0, 1))
 assert dL_dU.size() == U.size()
 assert dL_dc.size(1) == c_bias.size(0)
 assert dL_dhL.size() == hL.size()
+
+# Acá tu trozo de código. 
+# Primero agregamos algunas variables dummy para chequear 
+# que al menos las dimensiones están correctas
+
+dimk = 20
+dimkm1 = 15
+
+hk = torch.ones(B,dimk)
+Wk = torch.ones(dimk,dimkm1)
+bk = torch.ones(dimkm1)
+
+uk = hk.mm(Wk).add(bk)
+
+dL_dhkm1 = torch.ones(B,dimkm1)
+
+# Ahora tu fórmula para el gradiente.
+# Esto debes repetirlo para relu, celu, y swish
+
+# para sigmoid sigmoid
+
+dL_duk = torch.mul(dL_dhL, torch.mul(hL, torch.mul(torch.add(hL, -1), -1)))
+dL_dWk = None
+dL_dbk = None
+dL_dhk = None
+
+# El gradiente debe coincidir en dimensiones con las variables
+
+assert dL_duk.size() == uk.size()
+# assert dL_dhk.size() == hk.size()
+# assert dL_dbk.size() == bk.size()
+# assert dL_dWk.size() == Wk.size()
