@@ -176,20 +176,20 @@ class FFNN():
   #### Parte 2b) Usando la GPU
   def gpu(self):
     if torch.cuda.is_available():
-      self.W_1 = self.W_1.double().cuda()
-      self.b_1 = self.b_1.double().cuda()
-      self.W_2 = self.W_2.double().cuda()
-      self.b_2 = self.b_2.double().cuda()
-      self.U = self.U.double().cuda()
-      self.c_init = self.c_init.double().cuda()
+      self.W_1 = self.W_1.double()
+      self.b_1 = self.b_1.double()
+      self.W_2 = self.W_2.double()
+      self.b_2 = self.b_2.double()
+      self.U = self.U.double()
+      self.c_init = self.c_init.double()
   
   def cpu(self):
-    self.W_1 = self.W_1.cpu()
-    self.b_1 = self.b_1.cpu()
-    self.W_2 = self.W_2.cpu()
-    self.b_2 = self.b_2.cpu()
-    self.U = self.U.cpu()
-    self.c_init = self.c_init.cpu()
+    self.W_1 = self.W_1.cpu().double()
+    self.b_1 = self.b_1.cpu().double()
+    self.W_2 = self.W_2.cpu().double()
+    self.b_2 = self.b_2.cpu().double()
+    self.U = self.U.cpu().double()
+    self.c_init = self.c_init.cpu().double()
     
     #### Parte 7a) Inicialización de Xavier
     #### Parte 7e) Opcional: batch normalization
@@ -197,23 +197,26 @@ class FFNN():
   
   #### Parte 2c) Pasada hacia adelante
   def forward(self, x, predict=False):
+    x = x.double()
+
     if torch.cuda.is_available():
-      x = x.double().cuda()
+      x = x
       self.gpu()   # redundante, corregir
       
-      #pdb.set_trace()
+    else:   
+      self.cpu()   # redundante, corregir
       
-      if (len(self.keep_prob) == 0 or not predict):
-        prob_array = torch.ones(3)   # no se apagan neuronas
-        
-      # iterar para crear las mascaras de bits segun los largos de las matrices,
-      # hacerlo dinamico segun el numero de capas
+    if (len(self.keep_prob) == 0 or not predict):
+      prob_array = torch.ones(3)   # no se apagan neuronas
       
-      self.h_1 = self.l_a[0](torch.mm(x, self.W_1) + self.b_1)
-      self.h_2 = self.l_a[1](torch.mm(self.h_1, self.W_2) + self.b_2)
-      y = softmax(torch.mm(self.h_2, self.U) + self.c_init)
+    # iterar para crear las mascaras de bits segun los largos de las matrices,
+    # hacerlo dinamico segun el numero de capas
+    
+    self.h_1 = self.l_a[0](torch.mm(x, self.W_1) + self.b_1)
+    self.h_2 = self.l_a[1](torch.mm(self.h_1, self.W_2) + self.b_2)
+    y = softmax(torch.mm(self.h_2, self.U) + self.c_init)
 
-      return y
+    return y
 
   
   #### Parte 4a) Método backward
@@ -230,7 +233,7 @@ class FFNN():
     dL_duL = torch.mul(torch.add(y_pred, torch.mul(y, -1)), 1/y_pred.size(0))
     
     dL_dU = torch.mm(torch.transpose(self.h_2, 0, 1), dL_duL)
-    dL_dc = torch.mm(torch.ones(1, dL_duL.size(0)).double().cuda(), dL_duL)
+    dL_dc = torch.mm(torch.ones(1, dL_duL.size(0)).double(), dL_duL)
     dL_dh2 = torch.mm(dL_duL, torch.transpose(self.U, 0, 1))
       
     assert dL_duL.size() == uL.size()
@@ -261,7 +264,7 @@ class FFNN():
     dL_du2 = dL_du2_sig
 
     dL_dW2 = torch.mm(torch.transpose(self.h_1, 0, 1), dL_du2)
-    dL_db2 = torch.mm(torch.ones(1, dL_du2.size(0)).double().cuda(), dL_du2)
+    dL_db2 = torch.mm(torch.ones(1, dL_du2.size(0)).double(), dL_du2)
     dL_dh1 = torch.mm(dL_du2, torch.transpose(self.W_2, 0, 1))
 
     assert dL_du2.size() == u2.size()
@@ -288,7 +291,7 @@ class FFNN():
     dL_du1 = dL_du1_sig
 
     dL_dW1 = torch.mm(torch.transpose(x, 0, 1), dL_du1)
-    dL_db1 = torch.mm(torch.ones(1, dL_du1.size(0)).double().cuda(), dL_du1)
+    dL_db1 = torch.mm(torch.ones(1, dL_du1.size(0)).double(), dL_du1)
     dL_dx = torch.mm(dL_du1, torch.transpose(self.W_1, 0, 1))
 
     assert dL_du1.size() == u1.size()
@@ -368,8 +371,8 @@ class Adam():
 class RandomDataset():
   def __init__(self, N, F, C):
     x = torch.rand(N, F)
-    self.x = torch.bernoulli(x).double().cuda()
-    self.y = torch.from_numpy(numpy.eye(C)[numpy.random.choice(C, N)]).double().cuda()
+    self.x = torch.bernoulli(x).double()
+    self.y = torch.from_numpy(numpy.eye(C)[numpy.random.choice(C, N)]).double()
     self.large = N
   
   def __len__(self):
@@ -455,7 +458,7 @@ redes = [
 
 for idx, red_neuronal in enumerate(redes):
 
-  red_neuronal.gpu()
+  red_neuronal.cpu()
 
   optimizador = SGD(red_neuronal, 0.001) 
 
