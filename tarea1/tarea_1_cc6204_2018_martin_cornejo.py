@@ -299,14 +299,11 @@ class FFNN():
     if (self.wc_par != None):
       const = const - lr * self.wc_par
     
-    self.W_1 = self.W_1 * const  - lr * self.gradientes['dL_dW1']
-    self.b_1 = self.b_1 - lr * self.gradientes['dL_db1']
+    for idx in range(len(self.l_a) + 1):
+      W_aux = self.parametros[idx][0] * const - lr * self.gradientes[idx][0]
+      b_aux = self.parametros[idx][1] * const - lr * self.gradientes[idx][1]
 
-    self.W_2 = self.W_2 * const - lr * self.gradientes['dL_dW2']
-    self.b_2 = self.b_2 - lr * self.gradientes['dL_db2']
-
-    self.U = self.U * const - lr * self.gradientes['dL_dU']
-    self.c_init = self.c_init - lr * self.gradientes['dL_dc']
+      self.parametros[idx] = (W_aux, b_aux)
 
 """## Probando tu red con un modelo pre-entrenado y visualizando casos incorrectos"""
 
