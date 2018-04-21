@@ -247,9 +247,9 @@ class FFNN():
           
     #dL_duL = torch.mul(torch.mul(y, torch.add(y_pred, -1)), 1/y_pred.size(0))
     dL_duL = torch.mul(torch.add(y_pred, torch.mul(y, -1)), 1/y_pred.size(0))
-    dL_dU = torch.mm(torch.transpose(self.h_2, 0, 1), dL_duL)
+    dL_dU = torch.mm(torch.transpose(self.h_array[nHidden-1], 0, 1), dL_duL)
     dL_dc = torch.mm(torch.ones(1, dL_duL.size(0)).double(), dL_duL)
-    dL_dh2 = torch.mm(dL_duL, torch.transpose(self.U, 0, 1))
+    dL_dh2 = torch.mm(dL_duL, torch.transpose(self.parametros[nHidden][0], 0, 1))
       
     assert dL_duL.size() == self.h_array[nHidden].size()
     assert dL_dU.size() == self.parametros[nHidden][0].size()
@@ -263,9 +263,9 @@ class FFNN():
 
     for idx, f_activacion in enumerate(self.l_a):
 
-      derivada = chooseDeriv(funcion_activacion)
+      derivadaActivacion = chooseDeriv(self.l_a[nHidden-idx-1])
       
-      dL_du_hidden = torch.mul(deriv_activaciones[nHidden-idx], derivada(self.h_array[nHidden-idx-1]))
+      dL_du_hidden = torch.mul(deriv_activaciones[nHidden-idx], derivadaActivacion(self.h_array[nHidden-idx-1]))
 
       if (nHidden-1 == idx):
         dL_dW = torch.mm(torch.transpose(x, 0, 1), dL_du_hidden)
@@ -275,48 +275,17 @@ class FFNN():
       dL_db = torch.mm(torch.ones(1, dL_du_hidden.size(0)).double(), dL_du_hidden)
       dL_dh_n_1 = torch.mm(dL_du_hidden, torch.transpose(self.parametros[nHidden-idx-1][0], 0, 1))
 
-      assert dL_du_hidden.size() == self.h_array[nHidden-1-idx].size()
+      assert dL_du_hidden.size() == self.h_array[nHidden-idx-1].size()
       assert dL_dW2.size() == self.parametros[nHidden-idx-1][0].size()
       assert dL_db2.size(1) == self.parametros[nHidden-idx-1][1].size(1)
 
       if (nHidden-2-idx > -1):   # no comparamos el tamaño de dL/dx, no es relevante
         assert dL_dh1.size() == self.h_array[nHidden-2-idx].size()
 
-      gradientes[nHidden-1-idx] = (dL_dW, dL_db)
-      deriv_activaciones[nHidden-1-idx] = dL_dh_n_1
+      gradientes[nHidden-idx-1] = (dL_dW, dL_db)
+      deriv_activaciones[nHidden-idx-1] = dL_dh_n_1
          
-         
-    # gradientes primera capa escondida
-      
-    u1 = x.mm(self.W_1).add(self.b_1)  
-
-    # para sigmoid
-    dL_du1_sig = torch.mul(dL_dh1, torch.mul(self.h_1, torch.mul(torch.add(self.h_1, -1), -1)))
-  
-    # para relu
-    dL_duk_rel = None
-
-    # para celu
-    dL_duk_celu = None
-
-    # para swish
-    dL_duk_swish = None
-
-    dL_du1 = dL_du1_sig
-
-    dL_dW1 = torch.mm(torch.transpose(x, 0, 1), dL_du1)
-    dL_db1 = torch.mm(torch.ones(1, dL_du1.size(0)).double(), dL_du1)
-    dL_dx = torch.mm(dL_du1, torch.transpose(self.W_1, 0, 1))
-
-    assert dL_du1.size() == u1.size()
-    assert dL_dW1.size() == self.W_1.size()
-    assert dL_db1.size(1) == self.b_1.size(1)
-    assert dL_dx.size() == x.size()
-      
-    for gradiente in ['dL_db1', 'dL_dW1', 'dL_db2', 'dL_dW2', 'dL_dc', 'dL_dU']:
-      gradientes[gradiente] = eval(gradiente)
-      
-      self.gradientes = gradientes
+    self.gradientes = gradientes
       
       
   def actualizarParams(self, lr):
