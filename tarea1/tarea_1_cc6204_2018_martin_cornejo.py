@@ -215,9 +215,13 @@ class FFNN():
     # iterar para crear las mascaras de bits segun los largos de las matrices,
     # hacerlo dinamico segun el numero de capas
     
-    self.h_1 = self.l_a[0](torch.mm(x, self.W_1) + self.b_1)
-    self.h_2 = self.l_a[1](torch.mm(self.h_1, self.W_2) + self.b_2)
-    y = softmax(torch.mm(self.h_2, self.U) + self.c_init)
+    for idx, f_activacion in enumerate(self.l_a):
+      if (idx == 0):
+        self.h_layer = self.f_activacion(torch.mm(x, self.parametros[idx][0]) + self.parametros[idx][1])
+      else:
+        self.h_layer = self.f_activacion(torch.mm(self.h_layer, self.parametros[idx][0]) + self.parametros[idx][1])
+
+    y = softmax(torch.mm(self.h_layer, self.parametros[len(parametros)][0]) + self.parametros[len(parametros)][1])
 
     return y
 
