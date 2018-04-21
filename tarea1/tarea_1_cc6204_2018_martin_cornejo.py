@@ -156,19 +156,22 @@ class FFNN():
 
       else:
         self.F = F
+        l_h.append(C)
         self.l_h = l_h
         self.l_a = l_a
         self.C = C
 
-        self.W_1 = torch.randn(F, l_h[0])
-        self.b_1 = torch.zeros(1, l_h[0])
+        self.parametros = []
 
-        self.W_2 = torch.randn(l_h[0], l_h[1])
-        self.b_2 = torch.zeros(1, l_h[1])
+        for idx, neuronas in enumerate(self.l_h):
+          if (idx == 0):
+            pesos = torch.randn(F, neuronas)
+          else:
+            pesos = torch.randn(self.l_h[idx-1], neuronas)
 
-        self.U = torch.randn(l_h[1], C)
-        self.c_init = torch.zeros(1, C)
-        
+          bias = torch.randn(1, neuronas)
+          self.parametros.append((pesos, bias))
+
       self.wc_par = wc_par        
       self.keep_prob = keep_prob
         
