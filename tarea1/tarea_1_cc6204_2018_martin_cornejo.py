@@ -141,18 +141,19 @@ class FFNN():
     keep_prob=[]
   ):
       if (len(params) > 0):
-        self.W_1 = params[0][0]
-        self.b_1 = params[0][1]
-        self.W_2 = params[1][0]
-        self.b_2 = params[1][1]
-        self.U = params[2][0]
-        self.c_init = params[2][1]
+        W_1 = params[0][0]
+        b_1 = params[0][1]
+        W_2 = params[1][0]
+        b_2 = params[1][1]
+        U = params[2][0]
+        c_init = params[2][1]
         
-        self.c_init = self.c_init.view(1, self.c_init.size(0))
-        self.b_2 = self.b_2.view(1, self.b_2.size(0))
-        self.b_1 = self.b_1.view(1, self.b_1.size(0))
+        c_init = c_init.view(1, c_init.size(0))
+        b_2 = b_2.view(1, b_2.size(0))
+        b_1 = b_1.view(1, b_1.size(0))
         
         self.l_a = l_a
+        self.parametros = [(W_1, b_1), (W_2, b_2), (U, c_init)]
 
       else:
         self.F = F
@@ -171,28 +172,25 @@ class FFNN():
 
           bias = torch.randn(1, neuronas)
           self.parametros.append((pesos, bias))
-
+        
       self.wc_par = wc_par        
       self.keep_prob = keep_prob
         
         
   #### Parte 2b) Usando la GPU
+  
+  def toDouble(self):
+    for idx, param in enumerate(self.parametros):     
+        self.parametros[idx] = (param[0].double(), param[1].double())
+  
   def gpu(self):
     if torch.cuda.is_available():
-      self.W_1 = self.W_1.double()
-      self.b_1 = self.b_1.double()
-      self.W_2 = self.W_2.double()
-      self.b_2 = self.b_2.double()
-      self.U = self.U.double()
-      self.c_init = self.c_init.double()
-  
+      for idx, param in enumerate(self.parametros):
+        self.parametros[idx] = (param[0], param[1])
+
   def cpu(self):
-    self.W_1 = self.W_1.cpu().double()
-    self.b_1 = self.b_1.cpu().double()
-    self.W_2 = self.W_2.cpu().double()
-    self.b_2 = self.b_2.cpu().double()
-    self.U = self.U.cpu().double()
-    self.c_init = self.c_init.cpu().double()
+    for idx, param in enumerate(self.parametros):
+        self.parametros[idx] = (param[0].cpu(), param[1].cpu())
     
     #### Parte 7a) Inicialización de Xavier
     #### Parte 7e) Opcional: batch normalization
@@ -200,8 +198,9 @@ class FFNN():
   
   #### Parte 2c) Pasada hacia adelante
   def forward(self, x, predict=False):
+    self.toDouble()
     x = x.double()
-
+    
     if torch.cuda.is_available():
       x = x
       self.gpu()   # redundante, corregir
@@ -211,17 +210,17 @@ class FFNN():
       
     if (len(self.keep_prob) == 0 or not predict):
       prob_array = torch.ones(3)   # no se apagan neuronas
-      
+        
     # iterar para crear las mascaras de bits segun los largos de las matrices,
     # hacerlo dinamico segun el numero de capas
-    
+      
     for idx, f_activacion in enumerate(self.l_a):
       if (idx == 0):
-        self.h_layer = self.f_activacion(torch.mm(x, self.parametros[idx][0]) + self.parametros[idx][1])
+        self.h_layer = f_activacion(torch.mm(x, self.parametros[idx][0]) + self.parametros[idx][1])
       else:
-        self.h_layer = self.f_activacion(torch.mm(self.h_layer, self.parametros[idx][0]) + self.parametros[idx][1])
+        self.h_layer = f_activacion(torch.mm(self.h_layer, self.parametros[idx][0]) + self.parametros[idx][1])
 
-    y = softmax(torch.mm(self.h_layer, self.parametros[len(parametros)][0]) + self.parametros[len(parametros)][1])
+    y = softmax(torch.mm(self.h_layer, self.parametros[len(self.parametros)-1][0]) + self.parametros[len(self.parametros)-1][1])
 
     return y
 
@@ -336,6 +335,9 @@ class FFNN():
 
 #### Parte 2d) Probando tu red con un modelo pre-entrenado
 
+## Clonamos el github
+
+#!git clone https://github.com/jorgeperezrojas/cc6204-DeepLearning-DCCUChile.git
 
 """## Descenso de gradiente, momentum, RMSProp y Adam"""
 
@@ -465,17 +467,13 @@ redes = [
 
 for idx, red_neuronal in enumerate(redes):
 
-  red_neuronal.cpu()
+  red_neuronal.gpu()
 
   optimizador = SGD(red_neuronal, 0.001) 
 
   epochs = 30
   batch = 10
   red_neuronal, perdidas = entrenar_FFNN(red_neuronal, dataset, optimizador, epochs, batch)
-
-  #pdb.set_trace()
-  
-True
 
 """## Entrenando con datos de varita mágica"""
 
@@ -484,6 +482,7 @@ True
 """## Cargando datos de MNIST"""
 
 #### Parte 8a) Cargando y visualizando datos de MNIST
+
 
 """## Red neuronal para MNIST"""
 
