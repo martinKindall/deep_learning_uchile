@@ -214,70 +214,78 @@ class FFNN():
     # iterar para crear las mascaras de bits segun los largos de las matrices,
     # hacerlo dinamico segun el numero de capas
       
+    self.h_array = []
+
     for idx, f_activacion in enumerate(self.l_a):
       if (idx == 0):
         self.h_layer = f_activacion(torch.mm(x, self.parametros[idx][0]) + self.parametros[idx][1])
       else:
         self.h_layer = f_activacion(torch.mm(self.h_layer, self.parametros[idx][0]) + self.parametros[idx][1])
 
+      self.h_array.append(self.h_layer)
+
     y = softmax(torch.mm(self.h_layer, self.parametros[len(self.parametros)-1][0]) + self.parametros[len(self.parametros)-1][1])
+    self.h_array.append(y)
 
     return y
 
   
   #### Parte 4a) Método backward
+  
+  def chooseDeriv(funcion_activacion):
+    if (funcion_activacion == sig):
+      return lambda: x -> torch.mul(x, torch.mul(torch.add(x, -1), -1))
+    else:
+      raise Exception('Derivada no implementada')
+
   def backward(self,x,y,y_pred):
-    gradientes = {}
-      
+    nHidden = len(self.l_a)
+    gradientes = [0] * (nHidden + 1)
+    deriv_activaciones = [0] * (nHidden + 1)
+
     # gradientes capa de salida
-    
-    dimL = self.b_2.size(0)
-    uL = self.h_2.mm(self.U).add(self.c_init)
-      
+          
     #dL_duL = torch.mul(torch.mul(y, torch.add(y_pred, -1)), 1/y_pred.size(0))
-       
     dL_duL = torch.mul(torch.add(y_pred, torch.mul(y, -1)), 1/y_pred.size(0))
-    
     dL_dU = torch.mm(torch.transpose(self.h_2, 0, 1), dL_duL)
     dL_dc = torch.mm(torch.ones(1, dL_duL.size(0)).double(), dL_duL)
     dL_dh2 = torch.mm(dL_duL, torch.transpose(self.U, 0, 1))
       
-    assert dL_duL.size() == uL.size()
-    assert dL_dU.size() == self.U.size()
-    
-    #pdb.set_trace()
-    
-    assert dL_dc.size(1) == self.c_init.size(1)
-    assert dL_dh2.size() == self.h_2.size()
+    assert dL_duL.size() == self.h_array[nHidden].size()
+    assert dL_dU.size() == self.parametros[nHidden][0].size()
+    assert dL_dc.size(1) == self.parametros[nHidden][1].size(1)
+    assert dL_dh2.size() == self.h_array[nHidden-1].size()
 
-    # gradientes segunda capa escondida
+    gradientes[nHidden] = (dL_dU, dL_dc)
+    deriv_activaciones[nHidden] = dL_dh2
+
+    # gradientes capas escondidas
+
+    for idx, f_activacion in enumerate(self.l_a):
+
+      derivada = chooseDeriv(funcion_activacion)
       
-    u2 = self.h_1.mm(self.W_2).add(self.b_2)  
+      dL_du_hidden = torch.mul(deriv_activaciones[nHidden-idx], derivada(self.h_array[nHidden-idx-1]))
 
-    # para sigmoid
-    dL_du2_sig = torch.mul(dL_dh2, torch.mul(self.h_2, torch.mul(torch.add(self.h_2, -1), -1)))
-  
-    # para relu
-    dL_duk_rel = None
+      if (nHidden-1 == idx):
+        dL_dW = torch.mm(torch.transpose(x, 0, 1), dL_du_hidden)
+      else:
+        dL_dW = torch.mm(torch.transpose(self.h_array[nHidden-idx-2], 0, 1), dL_du_hidden)
 
-    # para celu
-    dL_duk_celu = None
+      dL_db = torch.mm(torch.ones(1, dL_du_hidden.size(0)).double(), dL_du_hidden)
+      dL_dh_n_1 = torch.mm(dL_du_hidden, torch.transpose(self.parametros[nHidden-idx-1][0], 0, 1))
 
-    # para swish
-    dL_duk_swish = None
+      assert dL_du_hidden.size() == self.h_array[nHidden-1-idx].size()
+      assert dL_dW2.size() == self.parametros[nHidden-idx-1][0].size()
+      assert dL_db2.size(1) == self.parametros[nHidden-idx-1][1].size(1)
 
-    # se elige una funcion de activacion
-    dL_du2 = dL_du2_sig
+      if (nHidden-2-idx > -1):   # no comparamos el tamaño de dL/dx, no es relevante
+        assert dL_dh1.size() == self.h_array[nHidden-2-idx].size()
 
-    dL_dW2 = torch.mm(torch.transpose(self.h_1, 0, 1), dL_du2)
-    dL_db2 = torch.mm(torch.ones(1, dL_du2.size(0)).double(), dL_du2)
-    dL_dh1 = torch.mm(dL_du2, torch.transpose(self.W_2, 0, 1))
-
-    assert dL_du2.size() == u2.size()
-    assert dL_dW2.size() == self.W_2.size()
-    assert dL_db2.size(1) == self.b_2.size(1)
-    assert dL_dh1.size() == self.h_1.size()
-      
+      gradientes[nHidden-1-idx] = (dL_dW, dL_db)
+      deriv_activaciones[nHidden-1-idx] = dL_dh_n_1
+         
+         
     # gradientes primera capa escondida
       
     u1 = x.mm(self.W_1).add(self.b_1)  
