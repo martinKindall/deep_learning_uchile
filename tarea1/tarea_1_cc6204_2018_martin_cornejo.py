@@ -78,7 +78,6 @@ import glob
 import torch
 import numpy
 import pdb
-import matplotlib.pyplot as plt
 
 # Agrega acá todo lo que quieras importar o instalar
 
@@ -171,6 +170,7 @@ class FFNN():
         self.c_init = torch.zeros(1, C)
         
       self.wc_par = wc_par        
+      self.keep_prob = keep_prob
         
         
   #### Parte 2b) Usando la GPU
@@ -203,7 +203,7 @@ class FFNN():
       
       #pdb.set_trace()
       
-      if (len(keep_prob) == 0 || not predict):
+      if (len(self.keep_prob) == 0 or not predict):
         prob_array = torch.ones(3)   # no se apagan neuronas
         
       # iterar para crear las mascaras de bits segun los largos de las matrices,
@@ -322,6 +322,10 @@ class FFNN():
     self.U = self.U * const - lr * self.gradientes['dL_dU']
     self.c_init = self.c_init - lr * self.gradientes['dL_dc']
 
+"""## Probando tu red con un modelo pre-entrenado y visualizando casos incorrectos"""
+
+#### Parte 2d) Probando tu red con un modelo pre-entrenado
+
 
 """## Descenso de gradiente, momentum, RMSProp y Adam"""
 
@@ -433,9 +437,12 @@ def penalizacionNorma(arrayMatrix, B):
 
 """## Entrenando con datos random y graficando la pérdida"""
 
+#### Parte 5d) Graficando la pérdida en el tiempo
+
 #red_entrenada, perdida = entrenar_FFNN(red, dataset, optimizador, 20, 4)
 
 #red_neuronal = FFNN(0, [], ['algo'], 10, params)
+
 features = 10
 clases = 3
 dataset = RandomDataset(1000,features,clases)
@@ -459,3 +466,186 @@ for idx, red_neuronal in enumerate(redes):
   #pdb.set_trace()
   
 True
+
+"""## Entrenando con datos de varita mágica"""
+
+#### Parte 5e) Entrenando con datos no random
+
+"""## Cargando datos de MNIST"""
+
+#### Parte 8a) Cargando y visualizando datos de MNIST
+
+"""## Red neuronal para MNIST"""
+
+#### Parte 8b) Red neuronal para MNIST
+
+#### Parte 8c) Visualización de entrenamiento y convergencia
+
+"""---
+
+## Apéndice: partes a mano
+
+### Parte 1b) Derivando las funciones de activación
+
+\begin{equation}
+\frac{\partial\ \text{relu}(x)}{\partial x} =
+\left\{
+	\begin{array}{ll}
+		1  & \mbox{si } x \geq 0 \\
+		0  & \mbox{~} 
+	\end{array}
+\right. 
+\end{equation}
+<br>
+
+Dado $ \sigma (x) = sigmoid(x)$, tenemos que:
+
+\begin{eqnarray}
+\frac{\partial\ \text{swish}(x, \beta)}{\partial x} & = \sigma (\beta x) + \beta x \cdot \sigma (\beta x)(1-\sigma (\beta x)) \\
+& = \sigma (\beta x) + \beta x \cdot \sigma (\beta x) - \beta x \cdot \sigma (\beta x)^{2}  \\
+&= \beta \cdot swish(x, \beta) + \sigma (\beta x)(1 - \beta \cdot swish(x, \beta))\\
+\\
+\frac{\partial\ \text{swish}(x, \beta)}{\partial \beta} & =  
+x^2 \sigma (\beta x)(1 - \sigma (\beta x))\\
+\end{eqnarray}
+<br><br>
+
+\begin{eqnarray}
+\frac{\partial\ \text{celu}(x, \alpha)}{\partial x} & =  
+\left\{
+	\begin{array}{ll}
+		1  & \mbox{si } x \geq 0 \\
+		exp (\frac{x}{\alpha})  & \mbox{~} 
+	\end{array}
+\right. \\
+\\
+\frac{\partial\ \text{celu}(x, \alpha)}{\partial \alpha} & = 
+\left\{
+	\begin{array}{ll}
+		0  & \mbox{si } x \geq 0 \\
+		exp (\frac{x}{\alpha})(1 - \frac{x}{\alpha}) - 1  & \mbox{~} 
+	\end{array}
+\right. \\
+\end{eqnarray}
+
+### Parte 1c) Softmax
+
+Dada la funcion `softmax` sabemos que cada elemento de la secuencia $\text{softmax}(x_1,\ldots,x_n)$ tiene la forma
+
+\begin{equation}
+s_i = \frac{e^{x_i}}{\sum_{j=1}^{n}e^{x_j}}
+\end{equation}
+
+Luego, para cada elemento de la secuencia $\text{softmax}(x_1-M,\ldots,x_n-M)$ se tiene
+
+\begin{equation}
+s_i = \frac{e^{x_i-M}}{\sum_{j=1}^{n}e^{x_j-M}} = \frac{e^{-M}e^{x_i}}{\sum_{j=1}^{n}e^{-M}e^{x_j}} = \frac{e^{-M}e^{x_i}}{e^{-M}\sum_{j=1}^{n}e^{x_j}} = \frac{e^{x_i}}{\sum_{j=1}^{n}e^{x_j}}
+\end{equation}
+
+Demostrando que $\text{softmax}(x_1-M,\ldots,x_n-M) = \text{softmax}(x_1,\ldots,x_n)$.
+
+### Parte 3b) Derviando la última capa
+
+\begin{equation}
+\frac{\partial \cal L}{\partial u^{(L)}} = \frac{\partial \cal L}{\partial ŷ} \cdot \frac{\partial ŷ}{\partial u^{(L)}} \\
+\end{equation}
+
+Usando la notación de Einstein tenemos que:
+
+\begin{eqnarray}
+(\frac{\partial\cal L}{\partial U})_{ij} &= \frac{\partial\cal L}{\partial u^{(L)}_{kl}} \frac{\partial u^{(L)}_{kl}}{\partial U_{ij}} \\
+\end{eqnarray}
+
+Luego,
+
+\begin{equation}
+\frac{\partial u^{(L)}_{kl}}{\partial U_{ij}} = \frac{\partial (h^{(L)}_{kr}U_{rl} + c_{l})}{\partial U_{ij}} = \left\{
+    \begin{array}{}
+		h^{(L)}_{ki}  & \mbox{si } r = i,\ l = j \\
+		0  & \mbox{~}
+    \end{array}
+\right.
+\end{equation}
+
+Entonces,
+
+\begin{eqnarray}
+(\frac{\partial\cal L}{\partial U})_{ij} &= \frac{\partial\cal L}{\partial u^{(L)}_{kl}} h^{(L)}_{ki} = \frac{\partial\cal L}{\partial u^{(L)}_{kj}} h^{(L)}_{ki} \\
+\\
+& \boxed{ \frac{\partial\cal L}{\partial U} = (h^{(L)})^{T} \frac{\partial\cal L}{\partial u^{(L)}} }
+\end{eqnarray}
+
+Análogamente
+
+\begin{equation}
+\frac{\partial u^{(L)}_{kl}}{\partial c_{i}} = \frac{\partial (h^{(L)}_{kr}U_{rl} + c_{l})}{\partial c_{i}} = \left\{
+    \begin{array}{}
+		1  & \mbox{si } l = j \\
+		0  & \mbox{~}
+    \end{array}
+\right.
+\end{equation}
+
+\begin{eqnarray}
+(\frac{\partial\cal L}{\partial c})_{i} &= \frac{\partial\cal L}{\partial u^{(L)}_{ki}} \cdot 1
+\end{eqnarray}
+
+\begin{equation}
+\boxed{ \frac{\partial\cal L}{\partial c} = [1 \ldots 1] \frac{\partial\cal L}{\partial u^{(L)}} }
+\end{equation}
+
+Donde $[1 \ldots 1]$ es un vector de unos de largo correspondiente al numero de fila del resultado de $\frac{\partial\cal L}{\partial u^{(L)}}$ 
+
+Finalmente,
+
+\begin{equation}
+\frac{\partial u^{(L)}_{kl}}{\partial h^{(L)}_{ij}} = \frac{\partial (h^{(L)}_{kr}U_{rl} + c_{l})}{\partial h^{(L)}_{ij}} = \left\{
+    \begin{array}{}
+		U_{jl}  & \mbox{si } k = i,\ r = j \\
+		0  & \mbox{~}
+    \end{array}
+\right.
+\end{equation}
+
+\begin{eqnarray}
+(\frac{\partial\cal L}{\partial h^{(L)}})_{ij} &= \frac{\partial\cal L}{\partial u^{(L)}_{kl}} U_{jl} = \frac{\partial\cal L}{\partial u^{(L)}_{il}} U_{lj}^{T} \\
+\\
+& \boxed{ \frac{\partial\cal L}{\partial h^{(L)}} = \frac{\partial\cal L}{\partial u^{(L)}} U^{T} }
+\end{eqnarray}
+
+### Parte 3c) Derivando desde las capas escondidas
+
+\begin{equation}
+\frac{\partial\cal L}{\partial u^{(k)}} = \frac{\partial\cal L}{\partial h^{(k)}} \frac{\partial\cal h^{(k)}}{\partial u^{(k)}} \\
+\end{equation}
+
+Para __sigmoid__ tenemos la siguiente derivada:
+\begin{equation}
+h^{(k)} = sig(u^{(k)})
+\\
+\frac{\partial\cal h^{(k)}}{\partial u^{(k)}} = h^{(k)}(1 - h^{(k)})
+\end{equation}
+<br><br>
+
+Las siguientes derivadas pueden obtenerse independiente de la forma de la función de activación y son análogas a las calculadas en la última capa:
+<br><br>
+\begin{equation}
+\frac{\partial\cal L}{\partial W^{(k)}} = (h^{(k)})^{T} \frac{\partial\cal L}{\partial u^{(k)}} \\
+\end{equation}
+<br><br>
+
+\begin{equation}
+\frac{\partial\cal L}{\partial b^{(k)}} = [1 \ldots 1] \frac{\partial\cal L}{\partial u^{(k)}} \\
+\end{equation}
+<br><br>
+
+\begin{equation}
+\frac{\partial\cal L}{\partial h^{(k-1)}} = \frac{\partial\cal L}{\partial u^{(k)}} (W^{(k)})^T \\
+\end{equation}
+
+### Otras derivadas (derivadas opcionales de celu y swish, de batch normalization, etc.)
+
+### Parte 6a) Weight Decay
+
+$w_{ij_{n+1}} = (1 - \frac{\lambda \alpha }{N})w_{ij_{n}} - \lambda \frac{\partial \cal L}{\partial w_{ij_{n}}}$
+"""
